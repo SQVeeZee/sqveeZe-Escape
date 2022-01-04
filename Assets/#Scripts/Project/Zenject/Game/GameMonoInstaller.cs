@@ -4,7 +4,6 @@ using Zenject;
 public class GameMonoInstaller : MonoInstaller
 {
     [Header("GAME")]
-    [SerializeField] protected GameController _gameController = null;
     [SerializeField] protected LevelsController _levelsController = null;
 
     public override void InstallBindings()
@@ -16,15 +15,9 @@ public class GameMonoInstaller : MonoInstaller
 
     protected virtual void BindGame()
     {
-        Container.BindInterfacesAndSelfTo<GameController>().FromInstance(_gameController).AsSingle().NonLazy();
-
-        Debug.Log("!!!");
-
-        //Container.BindInterfacesAndSelfTo<SlowMoManager>().FromInstance(_slowMoManager).AsSingle().NonLazy();
+        //Container.BindInterfacesAndSelfTo<SlowMoManager>().FromInstance(_levelsController).AsSingle().NonLazy();
 
         //Container.BindInterfacesAndSelfTo<SlowMoManager>().FromNewComponentOnNewGameObject().AsSingle().NonLazy();
-
-        Debug.Log("!!!");
     }
 
     protected virtual void BindLevels()

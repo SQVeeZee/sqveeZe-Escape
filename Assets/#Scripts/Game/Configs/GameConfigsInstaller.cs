@@ -1,17 +1,13 @@
 using UnityEngine;
 using Zenject;
 
-[CreateAssetMenu(fileName = "GameConfigsInstaller", menuName = MenuPath, order = MenuOrder)]
+[CreateAssetMenu(fileName = "GameConfigsInstaller", menuName = "Installers/GameConfigsInstaller")]
 public class GameConfigsInstaller : ScriptableObjectInstaller<GameConfigsInstaller>
 {
-    private const string MenuPath = "Installers/GameConfigsInstaller";
-    private const int MenuOrder = int.MinValue + 100;
-
-    [Space]
-    [SerializeField] protected GameConfigs _gameConfigs = null;
+    [SerializeField] private LevelsConfigs _levelsConfigs = null;
 
     public override void InstallBindings()
     {
-        Container.BindInterfacesTo<GameConfigs>().FromInstance(_gameConfigs).AsSingle().NonLazy();
+        Container.Bind<LevelsConfigs>().FromInstance(_levelsConfigs).AsSingle().NonLazy();
     }
 }

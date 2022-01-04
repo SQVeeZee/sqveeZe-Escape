@@ -1,45 +1,98 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-public abstract class BaseLevelItem : MonoBehaviour
+public abstract class BaseLevelItem : MonoBehaviour, ILevelItem
 {
-    [SerializeField] List<BaseCharacterController> _baseCharacterControllers = null;
-    [SerializeField] List<PathLineController> PathLineControllers = new List<PathLineController>();
+    public event Action onPathCompleted;
+    public event Action<ELevelCompleteReason> onLevelCompleted;
 
-    private void Awake()
-    {
-        SetStartTargets();
-    }
+    [Header("Rooms")]
+    [SerializeField] private List<CharactersRoomOut> _ñharactersRoomOut = new List<CharactersRoomOut>();
+
+    [Header("Final Platform")]
+    [SerializeField] private FinalPlatform _finalPlatform = null;
+
+    private List<BaseCharacterController> _aliveCharacterControllers = new List<BaseCharacterController>();
+    private List<BaseCharacterController> _charactersFinished = new List<BaseCharacterController>();
 
     private void OnEnable()
     {
-        foreach(BaseCharacterController characterController in _baseCharacterControllers)
+        foreach(CharactersRoomOut roomOut in _ñharactersRoomOut)
         {
-            characterController.onReachPoint += SetCharacterTarget;
+            roomOut.onCreateCharacter += SetupCharacter;
         }
     }
-
     private void OnDisable()
     {
-        foreach (BaseCharacterController characterController in _baseCharacterControllers)
+        foreach (CharactersRoomOut roomOut in _ñharactersRoomOut)
         {
-            characterController.onReachPoint -= SetCharacterTarget;
+            roomOut.onCreateCharacter -= SetupCharacter;
         }
     }
 
-    protected void SetStartTargets()
+    private void Awake()
     {
-        for (int i = 0; i < _baseCharacterControllers.Count; i++)
+        _ñharactersRoomOut[0].ActivateRoom();
+    }
+
+    private void SetupCharacter(BaseCharacterController characterController)
+    {
+        if (characterController.GetCharacterTeam == ECharacterTeam.PLAYER)
         {
-            SetCharacterTarget(_baseCharacterControllers[i], 0);
+            _aliveCharacterControllers.Add(characterController);
+            characterController.onCharacterFinishPath += IsAllCharactersCompletePath;
+            characterController.onCharacterDie += OnCharacterDie;
         }
     }
 
-    private void SetCharacterTarget(BaseCharacterController characterController, int targetTransformId)
+    private void IsAllCharactersCompletePath(BaseCharacterController finishedCharacter)
     {
-        characterController.SetTargetTransform(PathLineControllers[targetTransformId].LinePoints
-            [UnityEngine.Random.Range(0, PathLineControllers[targetTransformId].LinePoints.Count)]);
+        _charactersFinished.Add(finishedCharacter);
+
+        if (IsAllCharactersFinished())
+        {
+            Do();
+
+            onPathCompleted?.Invoke();
+        }
+    }
+
+    private void OnCharacterDie(BaseCharacterController characterController)
+    {
+        _aliveCharacterControllers.Remove(characterController);
+
+        characterController.gameObject.SetActive(false);
+
+        if (_aliveCharacterControllers.Count == 0)
+        {
+            onLevelCompleted?.Invoke(ELevelCompleteReason.LOSE);
+        }
+    }
+
+    private void Do()
+    {
+        foreach (BaseCharacterController characterController in _aliveCharacterControllers.ToList())
+        {
+            characterController.StartLastMove(_finalPlatform.MovePlaceTransform, _finalPlatform.JumpPlaceTransform, 
+                delegate { OnJump(characterController); });
+        }
+
+        void OnJump(BaseCharacterController character)
+        {
+            _aliveCharacterControllers.Remove(character);
+
+            if (_aliveCharacterControllers.Count == 0)
+            {
+                onLevelCompleted?.Invoke(ELevelCompleteReason.WIN);
+            }
+        }
+    }
+
+    private bool IsAllCharactersFinished()
+    {
+        return _charactersFinished.Count == _aliveCharacterControllers.Count;
     }
 }

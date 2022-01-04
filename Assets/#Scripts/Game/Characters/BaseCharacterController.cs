@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5,82 +6,64 @@ using UnityEngine;
 
 public abstract class BaseCharacterController : MonoBehaviour
 {
-    public event Action<BaseCharacterController,int> onReachPoint = null;
+    public event Action<BaseCharacterController> onCharacterFinishPath = null;
+    public event Action<BaseCharacterController> onCharacterDie = null;
 
-    [SerializeField] protected Transform _characterTransform = null;
-    [SerializeField] protected Rigidbody _characterRigidbody = null;
+    [SerializeField] private ECharacterTeam _characterTeam = ECharacterTeam.NONE;
 
-    [SerializeField] protected float _moveSpeed = 5f;
+    [SerializeField] private CharacterMove _characterMove = null;
+    [SerializeField] private CharacterAnimatorBase _characterAnimatorBase = null;
+    [SerializeField] private BaseCharacterHealth _baseCharacterHealth = null;
 
-    private int _currentGroupId = 0;
+    [Header("Transform")]
+    [SerializeField] private Transform _characterTransform = null;
 
-    protected Transform _targetTransform = null;
-    public Vector3 GetCharacterPosition => _characterTransform.position;
-    public Vector3 TargetPosition { get; set; }
-    public Vector3 MoveDirection => (TargetPosition - GetCharacterPosition).normalized;
+    public ECharacterTeam GetCharacterTeam => _characterTeam;
+    public BaseCharacterHealth BaseCharacterHealth => _baseCharacterHealth;
 
-    protected bool _shouldMove = false;
-
-    public void SetTargetTransform(Vector3 targetPosition)
+    private void OnEnable()
     {
-        TargetPosition = targetPosition;
+        _characterMove.onCharacterFinish += OnCharacterCompletePath;
+        _baseCharacterHealth.onCharacterDie += delegate { onCharacterDie?.Invoke(this); };
+    }
+
+    private void OnDisable()
+    {
+        _characterMove.onCharacterFinish -= OnCharacterCompletePath;
+        _baseCharacterHealth.onCharacterDie -= delegate { onCharacterDie?.Invoke(this); };
     }
 
     private void FixedUpdate()
     {
-        if (ShouldMoveToTarget())
-        {
-            Move();
-        }
+        _characterMove.TryToMoveCharacter();
     }
 
     private void Update()
     {
-        if (ShouldMoveToTarget())
-        {
-            Rotate();
-        }
+        _characterMove.TryToRotateCharacter();
     }
 
-    private void Move()
+    public void Initialize(List<Vector3> movePath)
     {
-        Vector3 velocity = MoveDirection;
+        _characterMove.FillMovePath(movePath);
 
-        velocity.y = 0;
-
-        _characterRigidbody.velocity = velocity * Time.fixedDeltaTime * _moveSpeed;
+        _characterMove.RotateImmediately();
     }
 
-    private void Rotate()
+    public void OnCharacterCompletePath()
     {
-        Vector3 targetRotation = new Vector3(TargetPosition.x, _characterTransform.position.y, TargetPosition.z);
+        _characterAnimatorBase.PlayIdle();
 
-        _characterTransform.LookAt(targetRotation);
+        onCharacterFinishPath?.Invoke(this);
     }
 
-    private bool ShouldMoveToTarget()
+    public void StartLastMove(Transform targetPoint, Transform jumpPosition, Action callback)
     {
-        bool shouldMove = true;
-
-        if (Vector3.Distance(GetCharacterPosition, TargetPosition) <= 1.5f)
-        {
-            shouldMove = false;
-
-            _currentGroupId++;
-
-            onReachPoint?.Invoke(this, _currentGroupId);
-        }
-
-        return shouldMove;
+        _characterTransform.DOMove(targetPoint.position, 2).OnComplete(delegate { DoLastJump(jumpPosition, callback); });
     }
 
-    private void OnCompleteMove()
+    private void DoLastJump(Transform finalTransform, Action callback)
     {
-
-    }
-
-    private void StopMove()
-    {
-        _characterRigidbody.velocity = Vector3.zero;
+        _characterMove.JumpOnFinalPlatform(finalTransform, callback);
     }
 }

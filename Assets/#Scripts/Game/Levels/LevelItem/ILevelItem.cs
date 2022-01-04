@@ -1,18 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ILevelItem : MonoBehaviour
+public interface ILevelItem
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    event Action onPathCompleted;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    event Action<ELevelCompleteReason> onLevelCompleted;
 }

@@ -9,6 +9,6 @@ public class GlobalInstaller : MonoInstaller
 
     protected virtual void BindTools()
     {
-        Container.BindInterfacesAndSelfTo<MonoBehaviourController>().FromNewComponentOnNewGameObject().AsSingle().NonLazy();
+
     }
 }

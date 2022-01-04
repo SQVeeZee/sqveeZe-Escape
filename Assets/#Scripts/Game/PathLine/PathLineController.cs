@@ -14,9 +14,13 @@ public class PathLineController : MonoBehaviour
 
     public List<Vector3> LinePoints { get; set; }
 
-    private void Awake()
+    public Vector3 GetUniquePoint(int pointId) 
     {
         LinePoints = DefinePositions();
+
+        var a = LinePoints[pointId % _pointCount];
+        
+        return a; 
     }
 
     private List<Vector3> DefinePositions()
@@ -41,6 +45,7 @@ public class PathLineController : MonoBehaviour
         return pointPositions;
     }
 
+#if UNITY_EDITOR
     private void OnDrawGizmos()
     {
         List<Vector3> pointPositions = DefinePositions();
@@ -52,4 +57,5 @@ public class PathLineController : MonoBehaviour
             Gizmos.DrawSphere(pointPosition, 0.5f);
         }
     }
+#endif
 }

@@ -4,33 +4,100 @@ using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
 
-public class LevelsController : MonoBehaviour
+public class LevelsController : MonoBehaviour,IInitializable, IDisposable
 {
-    public event Action<int, ILevelConfig> onLevelConfigSet = null;
-    public event Action<int, ILevelItem> onLevelItemSet = null;
+    [Inject] protected readonly LevelsConfigs _levelsConfigs = null;
 
-    [SerializeField] protected Transform _rootTransform = null;
+    public ILevelItem GetLevelItem => _currentlevelItem;
 
-    protected int _currentLevelIndex = 0;
-    protected ILevelConfig _currentLevelConfig = null;
-    protected ILevelItem _currentLevelItem = null;
-    protected GameObject _currentLevelObject = null;
+    private BaseLevelItem _currentlevelItem = null;
+    private int _currentLevelId = 0;
 
-    protected int _currentLevelLocationIndex = 0;
-    protected int _currentLocationIndex = 0;
-    protected GameObject _currentLocationObject = null;
+    [Inject] UILevelFailedScreen _levelFailedScreen;
+    [Inject] UILevelCompleteScreen _levelCompleteScreen;
 
-    public int GetCurrentLevelIndex => _currentLevelIndex;
-    public ILevelConfig GetCurrentLevelConfig => _currentLevelConfig;
-    public ILevelItem GetCurrentLevelItem => _currentLevelItem;
+    [Inject]
+    protected virtual void Initialize(UILevelFailedScreen levelFailedScreen)
+    {
+        levelFailedScreen.onRestart += StartNextLevel;
+    }
+    
+    [Inject]
+    protected virtual void Initialize(UILevelCompleteScreen levelCompleteScreen)
+    {
+        levelCompleteScreen.onCompleteLevel += StartNextLevel;
+    }
 
-    public int GetCurrentLevelLocationIndex => _currentLevelLocationIndex;
-    public int GetCurrentLocationIndex => _currentLocationIndex;
+    public void Initialize()
+    {
+        CreateLevel();
+    }
 
-    public void InstantiateCurrentLevel()
+    public void Dispose()
     {
 
     }
 
+    public void StartNextLevel(ELevelCompleteReason levelCompleteReason)
+    {
+        switch (levelCompleteReason)
+        {
+            case ELevelCompleteReason.WIN:
+                StartNextLevel();
+                break;
 
+            case ELevelCompleteReason.LOSE:
+                RestartLevel();
+                break;
+        }
+    }
+
+    public void CompleteLevel(ELevelCompleteReason levelCompleteReason)
+    {
+        switch (levelCompleteReason)
+        {
+            case ELevelCompleteReason.WIN:
+                _levelCompleteScreen.Show();
+                break;
+
+            case ELevelCompleteReason.LOSE:
+                _levelFailedScreen.Show();
+                break;
+        }
+    }
+
+    private void CreateLevel()
+    {
+        _currentlevelItem = Instantiate(_levelsConfigs.LevelItemConfigs[_currentLevelId].LevelPrefab);
+
+        _currentlevelItem.onLevelCompleted += CompleteLevel;
+    }
+
+    private void RestartLevel()
+    {
+        DestroyLevel();
+
+        CreateLevel();
+    }
+
+    private void DestroyLevel()
+    {
+        _currentlevelItem.onLevelCompleted -= CompleteLevel;
+
+        Destroy(_currentlevelItem.gameObject);
+    }
+
+    private void IncreaseLevelId()
+    {
+        _currentLevelId++;
+    }
+
+    private void StartNextLevel()
+    {
+        DestroyLevel();
+
+        IncreaseLevelId();
+
+        CreateLevel();
+    }
 }
