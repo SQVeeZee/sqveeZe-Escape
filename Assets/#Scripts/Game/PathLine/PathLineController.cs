@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class PathLineController : MonoBehaviour
 {
+    [Header("Color")]
+    [SerializeField] private Color _pointColor = Color.white;
+
+    [Header("Transforms")]
     [SerializeField] private Transform _instanceTransform = null;
 
     [Header("Settings")]
@@ -50,7 +54,7 @@ public class PathLineController : MonoBehaviour
     {
         List<Vector3> pointPositions = DefinePositions();
         
-        Gizmos.color = Color.red;
+        Gizmos.color = _pointColor;
 
         foreach (Vector3 pointPosition in pointPositions)
         {

@@ -12,8 +12,6 @@ public class UILevelCompleteScreen : BaseScreen
     [Header("Buttons")]
     [SerializeField] private Button _nextButton = null;
 
-    [Inject] LevelsController _levelsController = null;
-
     private void OnEnable()
     {
         AddListeners();

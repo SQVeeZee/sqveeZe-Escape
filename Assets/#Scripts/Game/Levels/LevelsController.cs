@@ -6,6 +6,9 @@ using Zenject;
 
 public class LevelsController : MonoBehaviour,IInitializable, IDisposable
 {
+    public event Action onSlowMoActivated = null;
+    public event Action onSlowMoDisabled = null;
+
     [Inject] protected readonly LevelsConfigs _levelsConfigs = null;
 
     public ILevelItem GetLevelItem => _currentlevelItem;
@@ -71,6 +74,8 @@ public class LevelsController : MonoBehaviour,IInitializable, IDisposable
         _currentlevelItem = Instantiate(_levelsConfigs.LevelItemConfigs[_currentLevelId].LevelPrefab);
 
         _currentlevelItem.onLevelCompleted += CompleteLevel;
+        _currentlevelItem.onSlowMoActive += delegate { onSlowMoActivated?.Invoke(); };
+        _currentlevelItem.onPathCompleted += delegate { onSlowMoDisabled?.Invoke(); };
     }
 
     private void RestartLevel()
@@ -83,6 +88,8 @@ public class LevelsController : MonoBehaviour,IInitializable, IDisposable
     private void DestroyLevel()
     {
         _currentlevelItem.onLevelCompleted -= CompleteLevel;
+        _currentlevelItem.onSlowMoActive -= delegate { onSlowMoActivated?.Invoke(); };
+        _currentlevelItem.onPathCompleted -= delegate { onSlowMoDisabled?.Invoke(); };
 
         Destroy(_currentlevelItem.gameObject);
     }

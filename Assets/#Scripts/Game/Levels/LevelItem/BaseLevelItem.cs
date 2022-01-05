@@ -7,6 +7,7 @@ using UnityEngine;
 public abstract class BaseLevelItem : MonoBehaviour, ILevelItem
 {
     public event Action onPathCompleted;
+    public event Action onSlowMoActive;
     public event Action<ELevelCompleteReason> onLevelCompleted;
 
     [Header("Rooms")]
@@ -15,8 +16,17 @@ public abstract class BaseLevelItem : MonoBehaviour, ILevelItem
     [Header("Final Platform")]
     [SerializeField] private FinalPlatform _finalPlatform = null;
 
+    [Header("SlowMo")]
+    [SerializeField] private SlowMoDetection _slowMoDetection = null;
+
+    [SerializeField] private List<Transform> _cameraPoints = null;
+    [SerializeField] private Transform _slowMoCameraPosition = null;
+    [SerializeField] private Transform _finalCameraPosition = null;
+
     private List<BaseCharacterController> _aliveCharacterControllers = new List<BaseCharacterController>();
     private List<BaseCharacterController> _charactersFinished = new List<BaseCharacterController>();
+
+    private CameraItem _gameCameraItem = null;
 
     private void OnEnable()
     {
@@ -24,18 +34,32 @@ public abstract class BaseLevelItem : MonoBehaviour, ILevelItem
         {
             roomOut.onCreateCharacter += SetupCharacter;
         }
+        _slowMoDetection.onCharacterEnter += OnSlowMoActive;
     }
+
     private void OnDisable()
     {
         foreach (CharactersRoomOut roomOut in _ñharactersRoomOut)
         {
             roomOut.onCreateCharacter -= SetupCharacter;
         }
+        _slowMoDetection.onCharacterEnter -= OnSlowMoActive;
     }
 
     private void Awake()
     {
         _ñharactersRoomOut[0].ActivateRoom();
+
+        _gameCameraItem = (CameraItem)CameraManager.Instance.GetCameraItem(ECameraType.GAME);
+
+        _gameCameraItem.MoveOnPath(_cameraPoints);
+    }
+
+    private void OnSlowMoActive()
+    {
+        onSlowMoActive?.Invoke();
+
+        _gameCameraItem.ChangePosition(_slowMoCameraPosition);
     }
 
     private void SetupCharacter(BaseCharacterController characterController)
@@ -44,8 +68,8 @@ public abstract class BaseLevelItem : MonoBehaviour, ILevelItem
         {
             _aliveCharacterControllers.Add(characterController);
             characterController.onCharacterFinishPath += IsAllCharactersCompletePath;
-            characterController.onCharacterDie += OnCharacterDie;
         }
+        characterController.onCharacterDie += OnCharacterDie;
     }
 
     private void IsAllCharactersCompletePath(BaseCharacterController finishedCharacter)
@@ -56,20 +80,23 @@ public abstract class BaseLevelItem : MonoBehaviour, ILevelItem
         {
             Do();
 
-            onPathCompleted?.Invoke();
+            _gameCameraItem.ChangePosition(_finalCameraPosition, delegate { onPathCompleted?.Invoke(); });
         }
     }
 
     private void OnCharacterDie(BaseCharacterController characterController)
     {
-        _aliveCharacterControllers.Remove(characterController);
+        if(characterController.GetCharacterTeam == ECharacterTeam.PLAYER)
+        {
+            _aliveCharacterControllers.Remove(characterController);
+
+            if (_aliveCharacterControllers.Count == 0)
+            {
+                onLevelCompleted?.Invoke(ELevelCompleteReason.LOSE);
+            }
+        }
 
         characterController.gameObject.SetActive(false);
-
-        if (_aliveCharacterControllers.Count == 0)
-        {
-            onLevelCompleted?.Invoke(ELevelCompleteReason.LOSE);
-        }
     }
 
     private void Do()
