@@ -11,7 +11,8 @@ GameObject:
   - component: {fileID: 416378}
   - component: {fileID: 3370546}
   - component: {fileID: 2331164}
-  m_Layer: 0
+  - component: {fileID: 3545746927812712674}
+  m_Layer: 7
   m_Name: SM_Bld_Mud_Hut_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -81,3 +82,16 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &3545746927812712674
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 110110}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 10.346592, y: 4.3347282, z: 5.5674973}
+  m_Center: {x: -0.09097354, y: 2.1673212, z: 0.06130918}

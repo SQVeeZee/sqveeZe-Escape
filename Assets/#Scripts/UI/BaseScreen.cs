@@ -19,7 +19,7 @@ public class BaseScreen : MonoBehaviour, IScreen
     [SerializeField] private float _hideDuration = 0.5f;
     [SerializeField] private float _showDuration = 0.5f;
 
-    public void Hide(bool force = false, Action callback = null)
+    public virtual void Hide(bool force = false, Action callback = null)
     {
         onBeforeHide?.Invoke();
 
@@ -39,12 +39,16 @@ public class BaseScreen : MonoBehaviour, IScreen
             _canvas.SetActive(false);
 
             onAfterHide?.Invoke();
+
+            callback?.Invoke();
         }
     }
 
-    public void Show(bool force = false, Action callback = null)
+    public virtual void Show(bool force = false, Action callback = null)
     {
         onBeforeShow?.Invoke();
+
+        _canvas.SetActive(true);
 
         if (force)
         {
@@ -59,9 +63,9 @@ public class BaseScreen : MonoBehaviour, IScreen
 
         void OnShow()
         {
-            _canvas.SetActive(true);
-
             onAfterShow?.Invoke();
+
+            callback?.Invoke();
         }
     }
 }

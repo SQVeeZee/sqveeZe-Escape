@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
 
-public class LevelsController : MonoBehaviour,IInitializable, IDisposable
+public class LevelsController : MonoBehaviour
 {
-    public event Action onSlowMoActivated = null;
-    public event Action onSlowMoDisabled = null;
+    public event Action<BaseLevelItem> onLevelDestroy;
+    public event Action<BaseLevelItem> onLevelCreate;
+    public event Action onLevelCompleted;
 
     [Inject] protected readonly LevelsConfigs _levelsConfigs = null;
 
@@ -31,16 +32,6 @@ public class LevelsController : MonoBehaviour,IInitializable, IDisposable
         levelCompleteScreen.onCompleteLevel += StartNextLevel;
     }
 
-    public void Initialize()
-    {
-        CreateLevel();
-    }
-
-    public void Dispose()
-    {
-
-    }
-
     public void StartNextLevel(ELevelCompleteReason levelCompleteReason)
     {
         switch (levelCompleteReason)
@@ -57,6 +48,8 @@ public class LevelsController : MonoBehaviour,IInitializable, IDisposable
 
     public void CompleteLevel(ELevelCompleteReason levelCompleteReason)
     {
+        onLevelCompleted?.Invoke();
+
         switch (levelCompleteReason)
         {
             case ELevelCompleteReason.WIN:
@@ -69,13 +62,17 @@ public class LevelsController : MonoBehaviour,IInitializable, IDisposable
         }
     }
 
-    private void CreateLevel()
+    public BaseLevelItem CreateLevel()
     {
+        _currentLevelId = (int)Mathf.Repeat(_currentLevelId, _levelsConfigs.LevelItemConfigs.Count);
+
         _currentlevelItem = Instantiate(_levelsConfigs.LevelItemConfigs[_currentLevelId].LevelPrefab);
 
         _currentlevelItem.onLevelCompleted += CompleteLevel;
-        _currentlevelItem.onSlowMoActive += delegate { onSlowMoActivated?.Invoke(); };
-        _currentlevelItem.onPathCompleted += delegate { onSlowMoDisabled?.Invoke(); };
+
+        onLevelCreate?.Invoke(_currentlevelItem);
+
+        return _currentlevelItem;
     }
 
     private void RestartLevel()
@@ -87,9 +84,9 @@ public class LevelsController : MonoBehaviour,IInitializable, IDisposable
 
     private void DestroyLevel()
     {
+        onLevelDestroy?.Invoke(_currentlevelItem);
+
         _currentlevelItem.onLevelCompleted -= CompleteLevel;
-        _currentlevelItem.onSlowMoActive -= delegate { onSlowMoActivated?.Invoke(); };
-        _currentlevelItem.onPathCompleted -= delegate { onSlowMoDisabled?.Invoke(); };
 
         Destroy(_currentlevelItem.gameObject);
     }

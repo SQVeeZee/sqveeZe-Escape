@@ -4,5 +4,12 @@ using UnityEngine;
 
 public class EnemyController : BaseCharacterController
 {
-    [SerializeField] private EnemyDetection _enemyDetection = null;
+    [SerializeField] private EnemyAttack _enemyAttack = null;
+
+    public override void OnCharacterCompletePath()
+    {
+        base.OnCharacterCompletePath();
+
+        _enemyAttack.SetAttackColliderState(false);
+    }
 }

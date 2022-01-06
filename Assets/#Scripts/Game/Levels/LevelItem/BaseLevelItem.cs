@@ -3,123 +3,116 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Zenject;
 
 public abstract class BaseLevelItem : MonoBehaviour, ILevelItem
 {
-    public event Action onPathCompleted;
+    public event Action<Action> onPathCompleted;
     public event Action onSlowMoActive;
     public event Action<ELevelCompleteReason> onLevelCompleted;
 
-    [Header("Rooms")]
-    [SerializeField] private List<CharactersRoomOut> _ñharactersRoomOut = new List<CharactersRoomOut>();
-
-    [Header("Final Platform")]
+    [SerializeField] private LevelCharactersController _levelCharactersController = null;
     [SerializeField] private FinalPlatform _finalPlatform = null;
-
-    [Header("SlowMo")]
     [SerializeField] private SlowMoDetection _slowMoDetection = null;
-
-    [SerializeField] private List<Transform> _cameraPoints = null;
-    [SerializeField] private Transform _slowMoCameraPosition = null;
-    [SerializeField] private Transform _finalCameraPosition = null;
-
-    private List<BaseCharacterController> _aliveCharacterControllers = new List<BaseCharacterController>();
-    private List<BaseCharacterController> _charactersFinished = new List<BaseCharacterController>();
-
-    private CameraItem _gameCameraItem = null;
+    [SerializeField] private CharacterRoomsController _characterRoomsController = null;
+    [SerializeField] private LevelCameraController _levelCameraController = null;
+    [SerializeField] private KillZone _killZone = null;
 
     private void OnEnable()
     {
-        foreach(CharactersRoomOut roomOut in _ñharactersRoomOut)
-        {
-            roomOut.onCreateCharacter += SetupCharacter;
-        }
-        _slowMoDetection.onCharacterEnter += OnSlowMoActive;
+        Subscribe();
     }
 
     private void OnDisable()
     {
-        foreach (CharactersRoomOut roomOut in _ñharactersRoomOut)
-        {
-            roomOut.onCreateCharacter -= SetupCharacter;
-        }
-        _slowMoDetection.onCharacterEnter -= OnSlowMoActive;
+        UnSubscribe();
     }
 
     private void Awake()
     {
-        _ñharactersRoomOut[0].ActivateRoom();
+        InitializeLevelData();
 
-        _gameCameraItem = (CameraItem)CameraManager.Instance.GetCameraItem(ECameraType.GAME);
+        _characterRoomsController.ActiveRoom(0);
+    }
 
-        _gameCameraItem.MoveOnPath(_cameraPoints);
+    private void InitializeLevelData()
+    {
+        _levelCameraController.Initialize();
     }
 
     private void OnSlowMoActive()
     {
-        onSlowMoActive?.Invoke();
+        _levelCameraController.SetTransformOnSlowMo();
 
-        _gameCameraItem.ChangePosition(_slowMoCameraPosition);
+        onSlowMoActive?.Invoke();
     }
 
     private void SetupCharacter(BaseCharacterController characterController)
     {
-        if (characterController.GetCharacterTeam == ECharacterTeam.PLAYER)
-        {
-            _aliveCharacterControllers.Add(characterController);
-            characterController.onCharacterFinishPath += IsAllCharactersCompletePath;
-        }
-        characterController.onCharacterDie += OnCharacterDie;
+        characterController.SetLastMovePathPoint(_finalPlatform.MovePlaceTransform);
+
+        _levelCharactersController.FillCharacterInfo(characterController);
     }
 
-    private void IsAllCharactersCompletePath(BaseCharacterController finishedCharacter)
+    private void OnCharacterCompletePath(BaseCharacterController characterController,Action callback)
     {
-        _charactersFinished.Add(finishedCharacter);
+        Transform finalTransform = null;
 
-        if (IsAllCharactersFinished())
-        {
-            Do();
-
-            _gameCameraItem.ChangePosition(_finalCameraPosition, delegate { onPathCompleted?.Invoke(); });
-        }
-    }
-
-    private void OnCharacterDie(BaseCharacterController characterController)
-    {
         if(characterController.GetCharacterTeam == ECharacterTeam.PLAYER)
         {
-            _aliveCharacterControllers.Remove(characterController);
-
-            if (_aliveCharacterControllers.Count == 0)
-            {
-                onLevelCompleted?.Invoke(ELevelCompleteReason.LOSE);
-            }
+            finalTransform = _finalPlatform.PlayerJumpPlace;
         }
-
-        characterController.gameObject.SetActive(false);
+        else if (characterController.GetCharacterTeam == ECharacterTeam.ENEMY)
+        {
+            finalTransform = _finalPlatform.EnemyJumpPlaceTransform;
+        }
+        characterController.DoMoveAfterPathCompleted(finalTransform, callback);
     }
 
-    private void Do()
+    private void OnCharacterDetectFinalTrigger()
     {
-        foreach (BaseCharacterController characterController in _aliveCharacterControllers.ToList())
-        {
-            characterController.StartLastMove(_finalPlatform.MovePlaceTransform, _finalPlatform.JumpPlaceTransform, 
-                delegate { OnJump(characterController); });
-        }
+        onPathCompleted?.Invoke(OnComplete);
 
-        void OnJump(BaseCharacterController character)
+        void OnComplete()
         {
-            _aliveCharacterControllers.Remove(character);
-
-            if (_aliveCharacterControllers.Count == 0)
-            {
-                onLevelCompleted?.Invoke(ELevelCompleteReason.WIN);
-            }
+            _levelCameraController.SetTransformOnFinal();
         }
     }
 
-    private bool IsAllCharactersFinished()
+    private void OnLevelCompleted(ELevelCompleteReason levelCompleteReason)
     {
-        return _charactersFinished.Count == _aliveCharacterControllers.Count;
+        onLevelCompleted?.Invoke(levelCompleteReason);
+    }
+
+    private void OnCharacterKilled(BaseCharacterController characterController)
+    {
+        _levelCharactersController.OnCharacterDie(characterController);
+    }
+
+    private void Subscribe()
+    {
+        _characterRoomsController.onCreateCharacter += SetupCharacter;
+        _levelCharactersController.onCharacterCompletePath += OnCharacterCompletePath;
+
+        _slowMoDetection.onCharacterEnter += OnSlowMoActive;
+
+        _finalPlatform.onDetectCharacter += OnCharacterDetectFinalTrigger;
+
+        _levelCharactersController.onLevelCompleted += OnLevelCompleted;
+
+        _killZone.onDetectCharacter += OnCharacterKilled;
+    }
+    private void UnSubscribe()
+    {
+        _characterRoomsController.onCreateCharacter -= SetupCharacter;
+        _levelCharactersController.onCharacterCompletePath -= OnCharacterCompletePath;
+
+        _slowMoDetection.onCharacterEnter -= OnSlowMoActive;
+
+        _finalPlatform.onDetectCharacter -= OnCharacterDetectFinalTrigger;
+
+        _levelCharactersController.onLevelCompleted -= OnLevelCompleted;
+        
+        _killZone.onDetectCharacter -= OnCharacterKilled;
     }
 }

@@ -9,13 +9,15 @@ public abstract class BaseCharacterController : MonoBehaviour
     public event Action<BaseCharacterController> onCharacterFinishPath = null;
     public event Action<BaseCharacterController> onCharacterDie = null;
 
-    [SerializeField] private ECharacterTeam _characterTeam = ECharacterTeam.NONE;
+    [Header("Team")]
+    [SerializeField] protected ECharacterTeam _characterTeam = ECharacterTeam.NONE;
 
-    [SerializeField] private CharacterMove _characterMove = null;
-    [SerializeField] private CharacterAnimatorBase _characterAnimatorBase = null;
-    [SerializeField] private BaseCharacterHealth _baseCharacterHealth = null;
+    [Space]
+    [SerializeField] protected BaseCharacterMove _characterMove = null;
+    [SerializeField] protected CharacterAnimatorBase _characterAnimatorBase = null;
+    [SerializeField] protected BaseCharacterHealth _baseCharacterHealth = null;
 
-    [Header("Transform")]
+    [Space]
     [SerializeField] private Transform _characterTransform = null;
 
     public ECharacterTeam GetCharacterTeam => _characterTeam;
@@ -33,14 +35,9 @@ public abstract class BaseCharacterController : MonoBehaviour
         _baseCharacterHealth.onCharacterDie -= delegate { onCharacterDie?.Invoke(this); };
     }
 
-    private void FixedUpdate()
-    {
-        _characterMove.TryToMoveCharacter();
-    }
-
     private void Update()
     {
-        _characterMove.TryToRotateCharacter();
+        _characterMove.TryToMoveCharacter();
     }
 
     public void Initialize(List<Vector3> movePath)
@@ -50,20 +47,23 @@ public abstract class BaseCharacterController : MonoBehaviour
         _characterMove.RotateImmediately();
     }
 
-    public void OnCharacterCompletePath()
+    public virtual void OnCharacterCompletePath()
     {
-        _characterAnimatorBase.PlayIdle();
-
         onCharacterFinishPath?.Invoke(this);
     }
 
-    public void StartLastMove(Transform targetPoint, Transform jumpPosition, Action callback)
+    public void DoMoveAfterPathCompleted(Transform finalTransform, Action callback)
     {
-        _characterTransform.DOMove(targetPoint.position, 2).OnComplete(delegate { DoLastJump(jumpPosition, callback); });
+        _characterMove.MoveAfterPathCompleted(finalTransform, callback);
     }
 
-    private void DoLastJump(Transform finalTransform, Action callback)
+    public void SetCharacterRoot(Transform characterRoot)
     {
-        _characterMove.JumpOnFinalPlatform(finalTransform, callback);
+        _characterTransform.SetParent(characterRoot);
+    }
+
+    public void SetLastMovePathPoint(Transform lastMovePathPoint)
+    {
+        _characterMove.AddPointToPath(lastMovePathPoint.position);
     }
 }

@@ -2,17 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BaseDetection : MonoBehaviour
+public abstract class BaseDetection : MonoBehaviour,IDetection
 {
-    [SerializeField] protected Collider _collider = null;
-
-    protected virtual void OnTriggerEnter(Collider other)
-    {
-
-    }
-
+    [SerializeField] private Collider _collider = null;
+    
     public void SetColiderState(bool state)
     {
         _collider.enabled = state;
     }
+
+    protected abstract void OnTriggerEnter(Collider other);
 }

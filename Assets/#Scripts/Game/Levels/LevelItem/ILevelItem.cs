@@ -5,7 +5,9 @@ using UnityEngine;
 
 public interface ILevelItem
 {
-    event Action onPathCompleted;
+    event Action<Action> onPathCompleted;
 
     event Action<ELevelCompleteReason> onLevelCompleted;
+
+    public event Action onSlowMoActive;
 }

@@ -4,5 +4,8 @@ using UnityEngine;
 
 public class BaseCharacterDetection : BaseDetection
 {
-    
+    protected override void OnTriggerEnter(Collider other)
+    {
+
+    }
 }
