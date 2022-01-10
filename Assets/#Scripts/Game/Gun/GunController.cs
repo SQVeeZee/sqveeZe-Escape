@@ -21,7 +21,7 @@ public class GunController : MonoBehaviour
     [Inject]
     protected virtual void Initialize(UIGameClickControls clickControls)
     {
-        clickControls.onPointerDrag += OnClick;
+        clickControls.onPointerDrag += OnDrag;
         clickControls.onPointerDown += OnPointerDown;
         clickControls.onPointerUp += OnPointerUp;
     }
@@ -31,7 +31,7 @@ public class GunController : MonoBehaviour
         _gameCamera = CameraManager.Instance.GetCameraItem(ECameraType.GAME).Camera;
     }
 
-    protected virtual void OnClick(Vector2 viewportPosition)
+    protected virtual void OnDrag(Vector2 viewportPosition)
     {
         var clickRay = _gameCamera.ScreenPointToRay(viewportPosition);
         ray = clickRay;
@@ -41,14 +41,14 @@ public class GunController : MonoBehaviour
     {
         _isDragging = true;
 
-        OnClick(viewportPosition);
+        OnDrag(viewportPosition);
     }
 
     private void OnPointerUp(Vector2 viewportPosition)
     {
         _isDragging = false;
 
-        OnClick(viewportPosition);
+        OnDrag(viewportPosition);
     }
 
 
@@ -62,6 +62,8 @@ public class GunController : MonoBehaviour
 
     private void Fire(Ray ray)
     {
+        Debug.DrawRay(ray.origin, ray.direction);
+
         if (Time.time >= nextFire)
         {
             RaycastHit hit;

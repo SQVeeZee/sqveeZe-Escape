@@ -17,7 +17,8 @@ public class UIGameClickControls : MonoBehaviour, IPointerDownHandler, IPointerU
     [SerializeField] private GameObject _hitMark = null;
 
     public bool IsActive { get; protected set; }
-    public bool IsDragging = false;
+    public bool IsDragging { get; private set; } = false;
+    public float ScaleFactor = default;
 
     private Camera _uiCamera = null;
     private Coroutine _hitMarkCoroutine = null;
@@ -40,15 +41,6 @@ public class UIGameClickControls : MonoBehaviour, IPointerDownHandler, IPointerU
     {
         Vector2 result = _uiCamera.ScreenToViewportPoint(value);
         return result;
-    }
-
-    Vector2 clickedPos = default;
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        _aimTransform.anchoredPosition += clickedPos + eventData.delta;
-
-        onPointerDrag?.Invoke(_aimTransform.anchoredPosition);
     }
 
     private void OnDisable()
@@ -85,17 +77,20 @@ public class UIGameClickControls : MonoBehaviour, IPointerDownHandler, IPointerU
         SetHitMarkState(false);
     }
 
-    #region OnPointerDown
+    public void OnDrag(PointerEventData eventData)
+    {
+        _aimTransform.anchoredPosition += eventData.delta;
+
+        Vector2 finalPosition = _aimTransform.anchoredPosition * ScaleFactor;
+
+        onPointerDrag?.Invoke(finalPosition);
+    }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         var screenPosition = eventData.position;
 
-        var position = ConvertPositionScreenToViewport(screenPosition);
-
-        clickedPos = position;
-
-        OnPointerDown(position);
+        OnPointerDown(screenPosition);
     }
 
     private void OnPointerDown(Vector2 eventData)
@@ -105,14 +100,12 @@ public class UIGameClickControls : MonoBehaviour, IPointerDownHandler, IPointerU
         onPointerDown?.Invoke(eventData);
     }
 
-    #endregion OnPointerDown
-
-    #region OnPointerUp
-
     public void OnPointerUp(PointerEventData eventData)
     {
         var screenPosition = eventData.position;
+        
         var position = ConvertPositionScreenToViewport(screenPosition);
+        
         OnPointerUp(position);
     }
 
@@ -122,6 +115,4 @@ public class UIGameClickControls : MonoBehaviour, IPointerDownHandler, IPointerU
 
         onPointerUp?.Invoke(eventData);
     }
-
-    #endregion OnPointerUp
 }

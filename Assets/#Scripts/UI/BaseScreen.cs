@@ -11,8 +11,7 @@ public class BaseScreen : MonoBehaviour, IScreen
     public event Action onBeforeHide;
     public event Action onAfterHide;
 
-    [Header("Screen")]
-    [SerializeField] protected GameObject _canvas = null;
+    [SerializeField] protected GameObject _canvasObject = null;
     [SerializeField] protected CanvasGroup _canvasGroup = null;
 
     [Header("Settings")]
@@ -36,7 +35,7 @@ public class BaseScreen : MonoBehaviour, IScreen
 
         void OnHide()
         {
-            _canvas.SetActive(false);
+            _canvasObject.SetActive(false);
 
             onAfterHide?.Invoke();
 
@@ -48,7 +47,7 @@ public class BaseScreen : MonoBehaviour, IScreen
     {
         onBeforeShow?.Invoke();
 
-        _canvas.SetActive(true);
+        _canvasObject.SetActive(true);
 
         if (force)
         {

@@ -6,7 +6,16 @@ using UnityEngine.UI;
 
 public class UIGameScreen : BaseScreen
 {
+    [Header("Screen")]
     [SerializeField] private Image _raycastImage = null;
+    [SerializeField] private UIGameClickControls _gameClickControls = null;
+
+    [SerializeField] private Canvas _canvas = null;
+
+    private void Awake()
+    {
+        _gameClickControls.ScaleFactor = _canvas.scaleFactor;
+    }
 
     public override void Hide(bool force = false, Action callback = null)
     {

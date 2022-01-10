@@ -49,11 +49,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1ae33afabb80d540abaf0436025584e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canvas: {fileID: 6411587326318578017}
+  _canvasObject: {fileID: 6411587326318578017}
   _canvasGroup: {fileID: 6411587327115868864}
   _hideDuration: 0.5
   _showDuration: 0.5
   _raycastImage: {fileID: 6411587327044650056}
+  _gameClickControls: {fileID: 6411587327044650038}
+  _canvas: {fileID: 6411587326318578030}
 --- !u!1 &6411587326318578017
 GameObject:
   m_ObjectHideFlags: 0
@@ -334,7 +336,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _aimTransform: {fileID: 6411587326388563768}
   _hitMark: {fileID: 6411587328007096899}
-  IsDragging: 0
+  ScaleFactor: 0
+  _canvas: {fileID: 0}
 --- !u!222 &6411587327044650039
 CanvasRenderer:
   m_ObjectHideFlags: 0
