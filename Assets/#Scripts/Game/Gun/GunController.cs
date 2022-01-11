@@ -34,6 +34,7 @@ public class GunController : MonoBehaviour
     protected virtual void OnDrag(Vector2 viewportPosition)
     {
         var clickRay = _gameCamera.ScreenPointToRay(viewportPosition);
+
         ray = clickRay;
     }
 
@@ -62,7 +63,7 @@ public class GunController : MonoBehaviour
 
     private void Fire(Ray ray)
     {
-        Debug.DrawRay(ray.origin, ray.direction);
+        //Debug.DrawRay(ray.origin, ray.direction * 1200);
 
         if (Time.time >= nextFire)
         {

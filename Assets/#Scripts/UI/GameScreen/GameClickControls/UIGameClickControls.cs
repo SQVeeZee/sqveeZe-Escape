@@ -18,10 +18,16 @@ public class UIGameClickControls : MonoBehaviour, IPointerDownHandler, IPointerU
 
     public bool IsActive { get; protected set; }
     public bool IsDragging { get; private set; } = false;
-    public float ScaleFactor = default;
+
+    public float ScaleFactor { get; set; } = default;
 
     private Camera _uiCamera = null;
     private Coroutine _hitMarkCoroutine = null;
+
+    private Vector2 _screenSize;
+    private Vector2 _targetResolution;
+
+    private Vector2 _resolutionDifference => (_targetResolution / _screenSize);
 
     [Inject]
     protected virtual void Initialize(GunController gunController)
@@ -32,6 +38,8 @@ public class UIGameClickControls : MonoBehaviour, IPointerDownHandler, IPointerU
 
     private void Start()
     {
+        DefineScreenValues();
+
         SetHitMarkState(false);
 
         _uiCamera = CameraManager.Instance.GetCameraItem(ECameraType.UI).Camera;
@@ -77,20 +85,23 @@ public class UIGameClickControls : MonoBehaviour, IPointerDownHandler, IPointerU
         SetHitMarkState(false);
     }
 
+    
+    private void DefineScreenValues()
+    {
+        _screenSize = new Vector2(Screen.width, Screen.height);
+        _targetResolution = new Vector2(1440, 2560);
+    }
+
     public void OnDrag(PointerEventData eventData)
     {
-        _aimTransform.anchoredPosition += eventData.delta;
+        Vector2 finalPosition = _aimTransform.anchoredPosition += eventData.delta * _resolutionDifference;
 
-        Vector2 finalPosition = _aimTransform.anchoredPosition * ScaleFactor;
-
-        onPointerDrag?.Invoke(finalPosition);
+        onPointerDrag?.Invoke(_aimTransform.anchoredPosition * ScaleFactor);
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        var screenPosition = eventData.position;
-
-        OnPointerDown(screenPosition);
+        OnPointerDown(_aimTransform.anchoredPosition * ScaleFactor);
     }
 
     private void OnPointerDown(Vector2 eventData)
@@ -102,11 +113,7 @@ public class UIGameClickControls : MonoBehaviour, IPointerDownHandler, IPointerU
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        var screenPosition = eventData.position;
-        
-        var position = ConvertPositionScreenToViewport(screenPosition);
-        
-        OnPointerUp(position);
+        OnPointerUp(_aimTransform.anchoredPosition * ScaleFactor);
     }
 
     private void OnPointerUp(Vector2 eventData)
